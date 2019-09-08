@@ -1,19 +1,28 @@
 import React, { useState, useEffect } from 'react';
 
 // 主动的组件: 数据获取自动完成
-function withActive(WrappedComponent) {
+function withActive(WrappedComponent, fetchDataFunc) {
     return function _(props) {
         const [startTime, setStartTime] = useState(props.startTime || 0);
         const [endTime, setEndTime] = useState(props.endTime || 0);
         const [data, setData] = useState({})
-        const { onUpdateTime } = props
+        const { onUpdateTime, series } = props
 
         useEffect(() => {
-            setTimeout(() => {
-                setData({ value: `Number:${Math.random()}` })
+            fetchDataFunc({ startTime, endTime }).then(data => {
+                setData(data)
             })
             onUpdateTime(startTime, endTime)
-        }, [startTime, endTime]); // 仅在 count 更改时更新
+        }, [startTime, endTime, series]); // 仅在 count 更改时更新
+
+        
+        useEffect(() => {
+            fetchDataFunc({ startTime, endTime }).then(data => {
+                setData(data)
+            })
+            setStartTime(props.startTime)
+            setEndTime(props.endTime)
+        }, [props.startTime, props.endTime]); // 仅在 count 更改时更新
 
         return <WrappedComponent data={data} startTime={startTime} endTime={endTime} setStartTime={setStartTime} setEndTime={setEndTime} />
     }
@@ -30,9 +39,18 @@ function withPassive(WrappedComponent) {
 }
 
 
+class Widget {
+    // 渲染的部分
+    // 获取的函数
+    // 获取可选数据的列表
+    // 事件
+    // 元素级别可以配置的component
+    // 元素内部的config
+}
+
 function WidgetDemo(props) {
 
-    const { data, startTime, endTime, setStartTime, setEndTime } = props
+    const { data, startTime, endTime, setStartTime, setEndTime, onDataZoom } = props
 
     return (
         <div>
@@ -52,7 +70,16 @@ function WidgetDemo(props) {
     );
 }
 
-export const ActiveWidgetDemo = withActive(WidgetDemo)
+
+function fetchDataForWidgetDemo() {
+    return new Promise(resolve => {
+        resolve({
+            "v": `Number:${Math.random()}`
+        })
+    })
+}
+
+export const ActiveWidgetDemo = withActive(WidgetDemo, fetchDataForWidgetDemo)
 export const PassiveWidgetDemo = withPassive(WidgetDemo)
 
 
